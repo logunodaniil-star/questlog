@@ -192,6 +192,21 @@
             </div>
         </section>
 
+        <!-- БЛОК РЕЗЕРВНОГО КОПИРОВАНИЯ (БЭКАПОВ) -->
+        <div class="mt-10 pt-6 border-t border-slate-200">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 text-center">Синхронизация и бэкап прогресса</h3>
+            <div class="flex gap-3">
+                <button onclick="exportData()" class="flex-1 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-2 shadow-sm">
+                    <i data-lucide="download" class="w-4 h-4 text-indigo-600"></i> Скачать бэкап
+                </button>
+                
+                <label class="flex-1 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-sm">
+                    <i data-lucide="upload" class="w-4 h-4 text-amber-600"></i> Загрузить бэкап
+                    <input type="file" id="import-file" accept=".json" onchange="importData(event)" class="hidden">
+                </label>
+            </div>
+        </div>
+
     </main>
 
     <!-- ==================== MODAL: CREATE TASK WITH SURVEY ==================== -->
@@ -502,7 +517,6 @@
         // Load state from localStorage or use default
         let state = JSON.parse(localStorage.getItem('questlog_state_v2')) || createDefaultState();
 
-        // Ensure streak object exists if upgrading from older state
         if (!state.streak) {
             const today = getDateStr(0);
             state.streak = {
@@ -517,7 +531,6 @@
             localStorage.setItem('questlog_state_v2', JSON.stringify(state));
         }
 
-        // Check daily login streak automatically on page load
         function checkDailyStreak(simulatedDateStr = null) {
             const todayStr = simulatedDateStr || getDateStr(0);
             const lastStr = state.streak.lastActiveDate;
@@ -539,338 +552,230 @@
                 if (!state.streak.historyDates.includes(todayStr)) {
                     state.streak.historyDates.push(todayStr);
                 }
-
-                let earned = 10;
-                let msg = `День ${state.streak.current}! +10 баллов за активность`;
-
-                const milestone = STREAK_MILESTONES.find(m => m.days === state.streak.current);
-                if (milestone) {
-                    earned += milestone.bonus;
-                    msg = `🔥 Стрик ${state.streak.current} дн.! +${earned} баллов (включая бонус!)`;
-                    confetti({ particleCount: 70, spread: 65, origin: { y: 0.6 } });
-                }
-
-                state.points += earned;
-                state.xp += earned;
-                saveState();
-                showToast(msg, '🔥');
-
+                state.points += 10;
+                state.xp += 10;
+                showToast(`Стрик продлен! +10 баллов`, '🔥');
             } else if (diffDays > 1) {
                 state.streak.current = 1;
                 state.streak.lastActiveDate = todayStr;
                 state.streak.historyDates = [todayStr];
-                state.points += 10;
-                state.xp += 10;
-                saveState();
-                showToast('Новая серия началась! +10 баллов за возвращение', '🔥');
+                showToast(`Серия сбросилась. Начало нового дня!`, '🔄');
             }
+            saveState();
         }
 
-        // Demo button to test next day streak progression
-        function simulateNextDay() {
-            const lastDate = new Date(state.streak.lastActiveDate + 'T00:00:00');
-            lastDate.setDate(lastDate.getDate() + 1);
-            const year = lastDate.getFullYear();
-            const month = String(lastDate.getMonth() + 1).padStart(2, '0');
-            const day = String(lastDate.getDate()).padStart(2, '0');
-            const nextDayStr = `${year}-${month}-${day}`;
+        checkDailyStreak();
 
-            checkDailyStreak(nextDayStr);
-            renderAll();
-        }
+        // UI Tabs
+        function switchTab(tabName) {
+            const tasksTab = document.getElementById('tab-tasks');
+            const rewardsTab = document.getElementById('tab-rewards');
+            const tasksSec = document.getElementById('section-tasks');
+            const rewardsSec = document.getElementById('section-rewards');
 
-        // Pluralize Russian word "день"
-        function pluralizeDays(n) {
-            const mod10 = n % 10;
-            const mod100 = n % 100;
-            if (mod10 === 1 && mod100 !== 11) return 'день';
-            if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return 'дня';
-            return 'дней';
-        }
-
-        // Render Streak UI (Header, Banner, 7-day dots)
-        function renderStreak() {
-            const current = state.streak.current;
-            document.getElementById('streak-count').innerText = current;
-            document.getElementById('streak-label').innerText = pluralizeDays(current);
-            document.getElementById('streak-banner-title').innerText = `Серия: ${current} ${pluralizeDays(current)} подряд!`;
-
-            const nextM = STREAK_MILESTONES.find(m => m.days > current);
-            const milestoneEl = document.getElementById('streak-next-milestone');
-            if (nextM) {
-                const left = nextM.days - current;
-                milestoneEl.innerText = `До бонуса (+${nextM.bonus} б.): ${left} ${pluralizeDays(left)}`;
+            if (tabName === 'tasks') {
+                tasksTab.className = "flex-1 py-2.5 px-4 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition bg-white text-slate-900 shadow-sm";
+                rewardsTab.className = "flex-1 py-2.5 px-4 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition text-slate-600 hover:text-slate-900";
+                tasksSec.classList.remove('hidden');
+                rewardsSec.classList.add('hidden');
             } else {
-                milestoneEl.innerText = 'Все вехи пройдены! Вы легенда!';
+                rewardsTab.className = "flex-1 py-2.5 px-4 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition bg-white text-slate-900 shadow-sm";
+                tasksTab.className = "flex-1 py-2.5 px-4 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition text-slate-600 hover:text-slate-900";
+                rewardsSec.classList.remove('hidden');
+                tasksSec.classList.add('hidden');
             }
-
-            const dotsContainer = document.getElementById('streak-days-dots');
-            const filledCount = Math.min(current, 7);
-            let dotsHtml = '';
-
-            for (let i = 1; i <= 7; i++) {
-                const isDone = i <= filledCount;
-                const label = current > 7 ? (current - 7 + i) : i;
-                dotsHtml += `
-                    <div class="flex flex-col items-center gap-1">
-                        <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition ${
-                            isDone 
-                            ? 'bg-white text-orange-600 shadow-sm' 
-                            : 'bg-white/20 text-white/70 border border-white/20'
-                        }">
-                            ${isDone ? '🔥' : label}
-                        </div>
-                    </div>
-                `;
-            }
-            dotsContainer.innerHTML = dotsHtml;
         }
 
-        // Streak Modal Controls
-        function openStreakModal() {
-            const current = state.streak.current;
-            const best = state.streak.best;
-            document.getElementById('modal-current-streak').innerText = `${current} ${pluralizeDays(current)}`;
-            document.getElementById('modal-best-streak').innerText = `${best} ${pluralizeDays(best)}`;
-
-            const list = document.getElementById('streak-milestones-list');
-            list.innerHTML = STREAK_MILESTONES.map(m => {
-                const unlocked = best >= m.days || current >= m.days;
-                return `
-                    <div class="flex items-center justify-between p-3 rounded-xl border ${
-                        unlocked ? 'bg-orange-50/70 border-orange-200' : 'bg-slate-50 border-slate-200/70'
-                    }">
-                        <div class="flex items-center gap-2.5">
-                            <div class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold ${
-                                unlocked ? 'bg-orange-500 text-white' : 'bg-slate-200 text-slate-500'
-                            }">
-                                ${unlocked ? '✓' : m.days + 'д'}
-                            </div>
-                            <div>
-                                <div class="text-xs font-bold text-slate-800">${m.title}</div>
-                                <div class="text-[11px] text-slate-500">${unlocked ? 'Получено!' : `Нужно ${m.days} ${pluralizeDays(m.days)}`}</div>
-                            </div>
-                        </div>
-                        <span class="text-xs font-extrabold px-2.5 py-1 rounded-lg ${
-                            unlocked ? 'bg-amber-100 text-amber-700' : 'bg-slate-200/70 text-slate-600'
-                        }">
-                            +${m.bonus} б.
-                        </span>
-                    </div>
-                `;
-            }).join('');
-
-            document.getElementById('streak-modal').classList.remove('hidden');
-            lucide.createIcons();
-        }
-
-        function closeStreakModal() {
-            document.getElementById('streak-modal').classList.add('hidden');
-        }
-
-        // Render Header Stats (Points & Level)
-        function renderHeader() {
+        // Render everything
+        function render() {
+            // Points & XP
             document.getElementById('points-balance').innerText = state.points;
             
             const level = Math.floor(state.xp / 100) + 1;
-            const currentLevelXp = state.xp % 100;
-            
+            const xpInLevel = state.xp % 100;
             document.getElementById('user-level-badge').innerText = `Ур. ${level}`;
-            document.getElementById('xp-bar').style.width = `${currentLevelXp}%`;
-            document.getElementById('xp-text').innerText = `${currentLevelXp}/100 XP`;
+            document.getElementById('xp-bar').style.width = `${xpInLevel}%`;
+            document.getElementById('xp-text').innerText = `${xpInLevel}/100 XP`;
+
+            // Streak
+            document.getElementById('streak-count').innerText = state.streak.current;
+            document.getElementById('banner-streak-count') && (document.getElementById('banner-streak-count').innerText = state.streak.current);
+            document.getElementById('streak-banner-title').innerText = `Серия: ${state.streak.current} ${getDeclension(state.streak.current, ['день', дня, 'дней'])!=='дней'?'день':'дней'} подряд!`;
+            
+            // Next milestone info
+            const nextM = STREAK_MILESTONES.find(m => m.days > state.streak.current) || STREAK_MILESTONES[STREAK_MILESTONES.length - 1];
+            const daysLeft = Math.max(0, nextM.days - state.streak.current);
+            document.getElementById('streak-next-milestone').innerText = daysLeft > 0 ? `До бонуса (${nextM.days} дн.): ${daysLeft} дн.` : `Цель достигнута! 🎉`;
+
+            renderStreakDots();
+            renderTasks();
+            renderRewards();
+            
+            lucide.createIcons();
         }
 
-        // Render Tasks
+        function getDeclension(number, titles) {
+            const cases = [2, 0, 1, 1, 1, 2];
+            return titles[ (number%100>4 && number%100<20) ? 2 : cases[(number%10<5)?number%10:5] ];
+        }
+
+        function renderStreakDots() {
+            const container = document.getElementById('streak-days-dots');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const current = state.streak.current;
+            const displayCount = Math.max(7, Math.ceil(current / 7) * 7);
+            
+            for (let i = 1; i <= Math.min(7, displayCount); i++) {
+                const isChecked = i <= (current % 7 === 0 ? 7 : current % 7);
+                const dot = document.createElement('div');
+                dot.className = `w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold transition ${isChecked ? 'bg-white text-orange-600 shadow-sm' : 'bg-white/20 text-white/70'}`;
+                dot.innerText = i;
+                container.appendChild(dot);
+            }
+        }
+
         function renderTasks() {
             const activeList = document.getElementById('active-tasks-list');
             const completedList = document.getElementById('completed-tasks-list');
-            const completedSection = document.getElementById('completed-section');
+            const completedSec = document.getElementById('completed-section');
+            const badge = document.getElementById('tasks-count-badge');
+
+            activeList.innerHTML = '';
+            completedList.innerHTML = '';
 
             const activeTasks = state.tasks.filter(t => !t.completed);
             const completedTasks = state.tasks.filter(t => t.completed);
 
-            document.getElementById('tasks-count-badge').innerText = activeTasks.length;
+            badge.innerText = activeTasks.length;
 
             if (activeTasks.length === 0) {
                 activeList.innerHTML = `
-                    <div class="text-center py-12 bg-white rounded-2xl border border-dashed border-slate-300">
-                        <div class="w-12 h-12 rounded-full bg-indigo-50 text-indigo-500 flex items-center justify-center mx-auto mb-3">
-                            <i data-lucide="party-popper" class="w-6 h-6"></i>
+                    <div class="text-center py-10 bg-white rounded-2xl border border-slate-200/60 p-6">
+                        <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                            <i data-lucide="check-circle-2" class="w-6 h-6"></i>
                         </div>
-                        <h3 class="font-bold text-slate-700">Все квесты выполнены!</h3>
-                        <p class="text-xs text-slate-400 mt-1">Добавь новое задание или загляни в магазин наград</p>
+                        <h3 class="font-bold text-slate-800 text-sm">Все квесты выполнены!</h3>
+                        <p class="text-xs text-slate-400 mt-1">Добавь новое задание или отдохни в магазине наград.</p>
                     </div>
                 `;
             } else {
-                activeList.innerHTML = activeTasks.map(task => {
-                    const badgeColors = {
-                        emerald: 'bg-emerald-100 text-emerald-700',
-                        amber: 'bg-amber-100 text-amber-700',
-                        rose: 'bg-rose-100 text-rose-700',
-                        purple: 'bg-purple-100 text-purple-700'
+                activeTasks.forEach(task => {
+                    const diffColors = {
+                        emerald: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                        amber: 'bg-amber-50 text-amber-700 border-amber-200',
+                        purple: 'bg-purple-50 text-purple-700 border-purple-200'
                     };
-                    const badgeClass = badgeColors[task.color] || badgeColors.emerald;
+                    const badgeClass = diffColors[task.color] || diffColors.emerald;
 
-                    return `
-                        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition flex items-center justify-between gap-4 group">
-                            <div class="flex items-start gap-3.5 flex-1">
-                                <button onclick="completeTask(${task.id})" class="mt-0.5 w-6 h-6 rounded-lg border-2 border-slate-300 hover:border-indigo-500 hover:bg-indigo-50 flex items-center justify-center transition shrink-0">
-                                    <i data-lucide="check" class="w-3.5 h-3.5 text-indigo-600 opacity-0 group-hover:opacity-100 transition"></i>
-                                </button>
-                                <div>
-                                    <h4 class="font-semibold text-slate-800 text-sm sm:text-base leading-snug">${escapeHtml(task.title)}</h4>
-                                    <div class="flex items-center gap-2 mt-1.5">
-                                        <span class="text-[11px] font-bold px-2 py-0.5 rounded-md ${badgeClass}">${task.difficulty}</span>
-                                    </div>
+                    const item = document.createElement('div');
+                    item.className = "bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between gap-3 hover:border-indigo-200 transition";
+                    item.innerHTML = `
+                        <div class="flex items-start gap-3.5 flex-1 min-w-0">
+                            <button onclick="completeTask(${task.id})" class="w-6 h-6 rounded-lg border-2 border-slate-300 hover:border-indigo-600 hover:bg-indigo-50 flex items-center justify-center shrink-0 transition mt-0.5 cursor-pointer">
+                            </button>
+                            <div class="min-w-0">
+                                <h4 class="font-semibold text-slate-800 text-sm leading-snug break-words">${escapeHtml(task.title)}</h4>
+                                <div class="flex items-center gap-2 mt-1.5">
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-md border ${badgeClass}">${task.difficulty}</span>
                                 </div>
-                            </div>
-                            <div class="flex items-center gap-2 shrink-0">
-                                <div class="flex items-center gap-1 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200/60">
-                                    <i data-lucide="coins" class="w-4 h-4 text-amber-500 fill-amber-400"></i>
-                                    <span class="font-bold text-amber-700 text-sm">+${task.points}</span>
-                                </div>
-                                <button onclick="deleteTask(${task.id})" class="p-1.5 text-slate-300 hover:text-rose-500 rounded-lg transition" title="Удалить">
-                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                </button>
                             </div>
                         </div>
+                        <div class="flex items-center gap-3 shrink-0">
+                            <div class="flex items-center gap-1 text-amber-600 font-extrabold text-sm bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200/60">
+                                <i data-lucide="coins" class="w-3.5 h-3.5 fill-amber-400"></i>
+                                <span>+${task.points}</span>
+                            </div>
+                            <button onclick="deleteTask(${task.id})" class="text-slate-300 hover:text-rose-500 p-1 rounded transition">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
                     `;
-                }).join('');
+                    activeList.appendChild(item);
+                });
             }
 
             if (completedTasks.length > 0) {
-                completedSection.classList.remove('hidden');
-                completedList.innerHTML = completedTasks.map(task => `
-                    <div class="bg-slate-100/80 p-3.5 rounded-xl border border-slate-200/60 flex items-center justify-between gap-3">
-                        <div class="flex items-center gap-3">
+                completedSec.classList.remove('hidden');
+                completedTasks.forEach(task => {
+                    const item = document.createElement('div');
+                    item.className = "bg-white/60 p-3 rounded-xl border border-slate-200/60 flex items-center justify-between gap-3";
+                    item.innerHTML = `
+                        <div class="flex items-center gap-3 min-w-0">
                             <div class="w-5 h-5 rounded-md bg-emerald-500 text-white flex items-center justify-center shrink-0">
                                 <i data-lucide="check" class="w-3.5 h-3.5"></i>
                             </div>
-                            <span class="text-sm text-slate-500 line-through">${escapeHtml(task.title)}</span>
+                            <span class="text-xs text-slate-500 line-through truncate">${escapeHtml(task.title)}</span>
                         </div>
-                        <span class="text-xs font-bold text-emerald-600">+${task.points} б.</span>
-                    </div>
-                `).join('');
+                        <span class="text-xs text-slate-400 shrink-0">+${task.points} XP</span>
+                    `;
+                    completedList.appendChild(item);
+                });
             } else {
-                completedSection.classList.add('hidden');
+                completedSec.classList.add('hidden');
             }
-
-            lucide.createIcons();
         }
 
-        // Render Rewards Shop
         function renderRewards() {
             const grid = document.getElementById('rewards-grid');
-            grid.innerHTML = state.rewards.map(reward => {
-                const canAfford = state.points >= reward.cost;
-                return `
-                    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between gap-4">
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-12 h-12 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-2xl shrink-0">
-                                    ${reward.icon || '🎁'}
-                                </div>
-                                <div>
-                                    <h4 class="font-bold text-slate-800 text-sm leading-snug">${escapeHtml(reward.title)}</h4>
-                                    <div class="flex items-center gap-1 mt-1 text-amber-600 font-bold text-xs">
-                                        <i data-lucide="coins" class="w-3.5 h-3.5 fill-amber-400"></i>
-                                        <span>${reward.cost} баллов</span>
-                                    </div>
+            const historySec = document.getElementById('history-section');
+            const historyList = document.getElementById('purchase-history-list');
+
+            grid.innerHTML = '';
+            historyList.innerHTML = '';
+
+            state.rewards.forEach(rew => {
+                const canAfford = state.points >= rew.cost;
+                const card = document.createElement('div');
+                card.className = "bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between gap-4";
+                card.innerHTML = `
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-11 h-11 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-2xl shrink-0 shadow-sm">
+                                ${rew.icon}
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-slate-800 text-sm leading-snug">${escapeHtml(rew.title)}</h4>
+                                <div class="flex items-center gap-1 text-amber-600 font-extrabold text-xs mt-1">
+                                    <i data-lucide="coins" class="w-3.5 h-3.5 fill-amber-400"></i>
+                                    <span>${rew.cost} баллов</span>
                                 </div>
                             </div>
-                            <button onclick="deleteReward(${reward.id})" class="text-slate-300 hover:text-rose-500 p-1">
-                                <i data-lucide="x" class="w-4 h-4"></i>
-                            </button>
                         </div>
-                        <button onclick="buyReward(${reward.id})" ${canAfford ? '' : 'disabled'} 
-                            class="w-full py-2.5 px-4 rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5 transition ${
-                                canAfford 
-                                ? 'bg-amber-500 hover:bg-amber-600 active:scale-95 text-white shadow-sm shadow-amber-200' 
-                                : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                            }">
-                            <span>${canAfford ? 'Получить награду' : `Не хватает ${reward.cost - state.points} б.`}</span>
+                        <button onclick="deleteReward(${rew.id})" class="text-slate-300 hover:text-rose-500 p-1 rounded transition">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
                         </button>
                     </div>
+                    <button onclick="buyReward(${rew.id})" ${!canAfford ? 'disabled' : ''} 
+                        class="w-full py-2.5 rounded-xl font-semibold text-xs transition flex items-center justify-center gap-1.5 ${canAfford ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-md shadow-amber-200 active:scale-98 cursor-pointer' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}">
+                        <i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i>
+                        <span>${canAfford ? 'Получить награду' : 'Не хватает баллов'}</span>
+                    </button>
                 `;
-            }).join('');
-
-            const historySection = document.getElementById('history-section');
-            const historyList = document.getElementById('purchase-history-list');
-            if (state.history.length > 0) {
-                historySection.classList.remove('hidden');
-                historyList.innerHTML = state.history.slice(0, 5).map(item => `
-                    <div class="bg-white px-4 py-2.5 rounded-xl border border-slate-200/60 flex items-center justify-between text-xs">
-                        <span class="font-medium text-slate-700">${item.icon} ${escapeHtml(item.title)}</span>
-                        <span class="text-slate-400">${item.date} • -${item.cost} б.</span>
-                    </div>
-                `).join('');
-            } else {
-                historySection.classList.add('hidden');
-            }
-
-            lucide.createIcons();
-        }
-
-        // Survey Calculation Logic
-        function recalculateSurvey() {
-            const timeVal = parseInt(document.querySelector('input[name="q_time"]:checked').value);
-            const resVal = parseInt(document.querySelector('input[name="q_resistance"]:checked').value);
-            const effVal = parseInt(document.querySelector('input[name="q_effort"]:checked').value);
-
-            const totalPoints = timeVal + resVal + effVal;
-            
-            let difficulty = 'Легко';
-            let badgeClass = 'bg-emerald-100 text-emerald-700';
-
-            if (totalPoints >= 100) {
-                difficulty = 'Эпик 🔥';
-                badgeClass = 'bg-purple-100 text-purple-700';
-            } else if (totalPoints >= 65) {
-                difficulty = 'Сложно';
-                badgeClass = 'bg-rose-100 text-rose-700';
-            } else if (totalPoints >= 35) {
-                difficulty = 'Средне';
-                badgeClass = 'bg-amber-100 text-amber-700';
-            }
-
-            const badgeEl = document.getElementById('calc-difficulty-badge');
-            badgeEl.innerText = difficulty;
-            badgeEl.className = `inline-block mt-1 text-xs font-bold px-2.5 py-0.5 rounded-full ${badgeClass}`;
-            
-            document.getElementById('calc-points-value').innerText = totalPoints;
-            return { totalPoints, difficulty };
-        }
-
-        // Create Task
-        function handleCreateTask(e) {
-            e.preventDefault();
-            const titleInput = document.getElementById('task-title-input');
-            const title = titleInput.value.trim();
-            if (!title) return;
-
-            const { totalPoints, difficulty } = recalculateSurvey();
-            let color = 'emerald';
-            if (totalPoints >= 100) color = 'purple';
-            else if (totalPoints >= 65) color = 'rose';
-            else if (totalPoints >= 35) color = 'amber';
-
-            state.tasks.unshift({
-                id: Date.now(),
-                title,
-                points: totalPoints,
-                difficulty,
-                color,
-                completed: false
+                grid.appendChild(card);
             });
 
-            saveState();
-            renderAll();
-            closeTaskModal();
-            titleInput.value = '';
-            showToast(`Квест добавлен (+${totalPoints} баллов)`, '⚔️');
+            if (state.history.length > 0) {
+                historySec.classList.remove('hidden');
+                state.history.slice(-5).reverse().forEach(hist => {
+                    const item = document.createElement('div');
+                    item.className = "bg-white p-3 rounded-xl border border-slate-200/60 flex items-center justify-between text-xs";
+                    item.innerHTML = `
+                        <div class="flex items-center gap-2">
+                            <span>🎁</span>
+                            <span class="font-semibold text-slate-700">${escapeHtml(hist.title)}</span>
+                        </div>
+                        <span class="text-slate-400">-${hist.cost} баллов</span>
+                    `;
+                    historyList.appendChild(item);
+                });
+            } else {
+                historySec.classList.add('hidden');
+            }
         }
 
-        // Complete Task
+        // Complete Task Action
         function completeTask(id) {
             const task = state.tasks.find(t => t.id === id);
             if (!task || task.completed) return;
@@ -879,163 +784,278 @@
             state.points += task.points;
             state.xp += task.points;
 
-            confetti({
-                particleCount: 55,
-                spread: 60,
-                origin: { y: 0.7 }
-            });
-
             saveState();
-            renderAll();
-            showToast(`Выполнено! Получено +${task.points} баллов`, '🎉');
+            render();
+            triggerConfetti();
+
+            showToast(`Квест выполнен! +${task.points} баллов`, '🎉');
         }
 
         function deleteTask(id) {
             state.tasks = state.tasks.filter(t => t.id !== id);
             saveState();
-            renderAll();
+            render();
         }
 
         function clearCompleted() {
             state.tasks = state.tasks.filter(t => !t.completed);
             saveState();
-            renderAll();
+            render();
         }
 
-        // Rewards Actions
-        function handleCreateReward(e) {
-            e.preventDefault();
-            const title = document.getElementById('reward-title-input').value.trim();
-            const cost = parseInt(document.getElementById('reward-cost-input').value);
-            const icon = document.getElementById('reward-icon-input').value.trim() || '🎁';
-
-            if (!title || isNaN(cost)) return;
-
-            state.rewards.push({
-                id: Date.now(),
-                title,
-                cost,
-                icon
-            });
-
-            saveState();
-            renderAll();
-            closeRewardModal();
-            document.getElementById('reward-title-input').value = '';
-            showToast('Новая награда добавлена в магазин!', '🎁');
-        }
-
+        // Buy Reward Action
         function buyReward(id) {
             const reward = state.rewards.find(r => r.id === id);
             if (!reward || state.points < reward.cost) return;
 
             state.points -= reward.cost;
-            const now = new Date();
-            const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-            state.history.unshift({
+            state.history.push({
                 title: reward.title,
                 cost: reward.cost,
-                icon: reward.icon,
-                date: timeStr
-            });
-
-            confetti({
-                particleCount: 80,
-                spread: 70,
-                origin: { y: 0.6 }
+                date: new Date().toLocaleDateString()
             });
 
             saveState();
-            renderAll();
-            showToast(`Награда получена: ${reward.title}!`, reward.icon);
+            render();
+            triggerConfetti();
+
+            showToast(`Награда получена: ${reward.title}!`, '🎁');
         }
 
         function deleteReward(id) {
             state.rewards = state.rewards.filter(r => r.id !== id);
             saveState();
-            renderAll();
+            render();
         }
 
-        // Navigation & Modals
-        function switchTab(tab) {
-            const tasksSec = document.getElementById('section-tasks');
-            const rewardsSec = document.getElementById('section-rewards');
-            const tabTasksBtn = document.getElementById('tab-tasks');
-            const tabRewardsBtn = document.getElementById('tab-rewards');
-
-            if (tab === 'tasks') {
-                tasksSec.classList.remove('hidden');
-                rewardsSec.classList.add('hidden');
-                tabTasksBtn.className = 'flex-1 py-2.5 px-4 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition bg-white text-slate-900 shadow-sm';
-                tabRewardsBtn.className = 'flex-1 py-2.5 px-4 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition text-slate-600 hover:text-slate-900';
-            } else {
-                tasksSec.classList.add('hidden');
-                rewardsSec.classList.remove('hidden');
-                tabRewardsBtn.className = 'flex-1 py-2.5 px-4 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition bg-white text-slate-900 shadow-sm';
-                tabTasksBtn.className = 'flex-1 py-2.5 px-4 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition text-slate-600 hover:text-slate-900';
-            }
-        }
-
+        // Survey & Task Creation Modal Logic
         function openTaskModal() {
-            document.getElementById('task-modal').classList.remove('hidden');
+            document.getElementById('task-title-input').value = '';
+            document.querySelector('input[name="q_time"][value="10"]').checked = true;
+            document.querySelector('input[name="q_resistance"][value="5"]').checked = true;
+            document.querySelector('input[name="q_effort"][value="5"]').checked = true;
             recalculateSurvey();
-            setTimeout(() => document.getElementById('task-title-input').focus(), 100);
+            document.getElementById('task-modal').classList.remove('hidden');
         }
 
         function closeTaskModal() {
             document.getElementById('task-modal').classList.add('hidden');
         }
 
+        function recalculateSurvey() {
+            const timeVal = parseInt(document.querySelector('input[name="q_time"]:checked').value);
+            const resistVal = parseInt(document.querySelector('input[name="q_resistance"]:checked').value);
+            const effortVal = parseInt(document.querySelector('input[name="q_effort"]:checked').value);
+
+            const totalScore = timeVal + resistVal + effortVal;
+            let points = Math.round(totalScore * 0.9);
+            points = Math.max(10, Math.min(300, points));
+
+            let diffText = 'Легко';
+            let diffColor = 'bg-emerald-100 text-emerald-700';
+
+            if (points > 40 && points <= 85) {
+                diffText = 'Средне';
+                diffColor = 'bg-amber-100 text-amber-700';
+            } else if (points > 85 && points <= 140) {
+                diffText = 'Хард';
+                diffColor = 'bg-orange-100 text-orange-700';
+            } else if (points > 140) {
+                diffText = 'Эпик';
+                diffColor = 'bg-purple-100 text-purple-700';
+            }
+
+            document.getElementById('calc-points-value').innerText = points;
+            const badge = document.getElementById('calc-difficulty-badge');
+            badge.innerText = diffText;
+            badge.className = `inline-block mt-1 text-xs font-bold px-2.5 py-0.5 rounded-full ${diffColor}`;
+        }
+
+        function handleCreateTask(e) {
+            e.preventDefault();
+            const title = document.getElementById('task-title-input').value.trim();
+            const points = parseInt(document.getElementById('calc-points-value').innerText);
+            const difficulty = document.getElementById('calc-difficulty-badge').innerText;
+
+            let color = 'emerald';
+            if (difficulty === 'Средне') color = 'amber';
+            if (difficulty === 'Хард' || difficulty === 'Эпик') color = 'purple';
+
+            const newTask = {
+                id: Date.now(),
+                title,
+                points,
+                difficulty,
+                color,
+                completed: false
+            };
+
+            state.tasks.unshift(newTask);
+            saveState();
+            closeTaskModal();
+            render();
+            showToast('Новый квест добавлен!', '✨');
+        }
+
+        // Reward Modal Logic
         function openRewardModal() {
+            document.getElementById('reward-title-input').value = '';
+            document.getElementById('reward-cost-input').value = '50';
+            document.getElementById('reward-icon-input').value = '🎁';
             document.getElementById('reward-modal').classList.remove('hidden');
-            setTimeout(() => document.getElementById('reward-title-input').focus(), 100);
         }
 
         function closeRewardModal() {
             document.getElementById('reward-modal').classList.add('hidden');
         }
 
-        // Toast Helper
-        let toastTimeout;
-        function showToast(message, icon = '✨') {
-            const toast = document.getElementById('toast');
-            document.getElementById('toast-message').innerText = message;
-            document.getElementById('toast-icon').innerText = icon;
+        function handleCreateReward(e) {
+            e.preventDefault();
+            const title = document.getElementById('reward-title-input').value.trim();
+            const cost = parseInt(document.getElementById('reward-cost-input').value);
+            const icon = document.getElementById('reward-icon-input').value.trim() || '🎁';
 
-            toast.classList.remove('opacity-0', 'translate-y-2');
-            clearTimeout(toastTimeout);
-            toastTimeout = setTimeout(() => {
-                toast.classList.add('opacity-0', 'translate-y-2');
-            }, 3000);
+            const newReward = {
+                id: Date.now(),
+                title,
+                cost,
+                icon
+            };
+
+            state.rewards.push(newReward);
+            saveState();
+            closeRewardModal();
+            render();
+            showToast('Награда добавлена в магазин!', '🛍️');
         }
 
+        // Streak Modal Logic
+        function openStreakModal() {
+            document.getElementById('modal-current-streak').innerText = `${state.streak.current} дн.`;
+            document.getElementById('modal-best-streak').innerText = `${state.streak.best} дн.`;
+
+            const list = document.getElementById('streak-milestones-list');
+            list.innerHTML = '';
+
+            STREAK_MILESTONES.forEach(m => {
+                const reached = state.streak.current >= m.days;
+                const item = document.createElement('div');
+                item.className = `p-3 rounded-xl border flex items-center justify-between ${reached ? 'bg-orange-50/60 border-orange-200' : 'bg-slate-50 border-slate-200/70'}`;
+                item.innerHTML = `
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-base">${reached ? '🔥' : '⏳'}</span>
+                        <div>
+                            <div class="text-xs font-bold text-slate-800">${m.title}</div>
+                            <div class="text-[10px] text-slate-400">Награда: +${m.bonus} баллов</div>
+                        </div>
+                    </div>
+                    <span class="text-xs font-extrabold ${reached ? 'text-orange-600' : 'text-slate-400'}">${reached ? 'Получено' : `${m.days} дн.`}</span>
+                `;
+                list.appendChild(item);
+            });
+
+            document.getElementById('streak-modal').classList.remove('hidden');
+        }
+
+        function closeStreakModal() {
+            document.getElementById('streak-modal').classList.add('hidden');
+        }
+
+        // Simulate next day for testing
+        let simDaysOffset = 0;
+        function simulateNextDay() {
+            simDaysOffset += 1;
+            const testDate = getDateStr(simDaysOffset);
+            checkDailyStreak(testDate);
+            render();
+            showToast(`Симуляция: сегодня ${testDate}`, '⏱️');
+        }
+
+        // Reset Demo Data
         function resetDemoData() {
-            if (confirm('Сбросить прогресс и вернуть стартовые демо-данные?')) {
-                localStorage.removeItem('questlog_state_v2');
+            if (confirm('Сбросить все данные и вернуть демо-задания?')) {
                 state = createDefaultState();
+                simDaysOffset = 0;
                 saveState();
-                renderAll();
-                showToast('Демо-данные восстановлены', '🔄');
+                render();
+                showToast('Данные сброшены к начальным', '🔄');
             }
         }
 
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+        // Toast Helper
+        let toastTimer = null;
+        function showToast(message, icon = '✨') {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-icon').innerText = icon;
+            document.getElementById('toast-message').innerText = message;
+
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            toast.classList.add('opacity-100');
+
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 3000);
         }
 
-        function renderAll() {
-            renderHeader();
-            renderStreak();
-            renderTasks();
-            renderRewards();
+        // Confetti helper
+        function triggerConfetti() {
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 50,
+                    spread: 60,
+                    origin: { y: 0.8 }
+                });
+            }
         }
 
-        // Initial check and render
-        checkDailyStreak();
-        renderAll();
+        // Escape HTML to prevent XSS
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        // ==================== ФУНКЦИИ БЭКАПА (ЭКСПОРТ И ИМПОРТ) ====================
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            
+            const dateStr = new Date().toISOString().slice(0, 10);
+            downloadAnchor.setAttribute("download", `questlog_backup_${dateStr}.json`);
+            
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            
+            showToast('Бэкап успешно сохранен!', '💾');
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedState = JSON.parse(e.target.result);
+                    if (importedState && typeof importedState === 'object' && importedState.tasks) {
+                        state = importedState;
+                        saveState();
+                        render();
+                        showToast('Прогресс успешно восстановлен!', '🔄');
+                    } else {
+                        alert('Неверный формат файла бэкапа.');
+                    }
+                } catch (error) {
+                    alert('Ошибка при чтении файла! Убедись, что это правильный бэкап QuestLog.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Initial launch
+        render();
     </script>
 </body>
 </html>
