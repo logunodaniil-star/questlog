@@ -1,3 +1,4 @@
+HTML
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -16,7 +17,6 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f8fafc;
             -webkit-tap-highlight-color: transparent;
         }
         .fade-in {
@@ -42,10 +42,10 @@
         }
     </style>
 </head>
-<body class="text-slate-800 antialiased pb-24">
+<body id="app-body" class="bg-slate-50 text-slate-800 antialiased pb-24 transition-colors duration-300">
 
     <!-- Top Header / Stats Bar -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <header id="app-header" class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm transition-colors duration-300">
         <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
             <!-- Brand & Level -->
             <div class="flex items-center gap-2.5">
@@ -54,12 +54,12 @@
                 </div>
                 <div>
                     <div class="flex items-center gap-1.5">
-                        <h1 class="font-bold text-base sm:text-lg tracking-tight text-slate-900">QuestLog</h1>
+                        <h1 class="font-bold text-base sm:text-lg tracking-tight theme-text">QuestLog</h1>
                         <span id="user-level-badge" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 whitespace-nowrap">Ур. 1</span>
                     </div>
                     <!-- XP Progress bar -->
                     <div class="flex items-center gap-1.5 mt-1">
-                        <div class="w-20 sm:w-28 h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div class="w-20 sm:w-28 h-2 bg-slate-100 rounded-full overflow-hidden theme-progress-bg">
                             <div id="xp-bar" class="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500" style="width: 30%"></div>
                         </div>
                         <span id="xp-text" class="text-[10px] font-medium text-slate-400">30/100 XP</span>
@@ -67,7 +67,7 @@
                 </div>
             </div>
 
-            <!-- Streak, Points & Reset -->
+            <!-- Streak, Points & Controls -->
             <div class="flex items-center gap-1.5 sm:gap-2">
                 <!-- Streak Badge -->
                 <button onclick="openStreakModal()" title="Ежедневный стрик" class="flex items-center gap-1 bg-orange-50 hover:bg-orange-100 border border-orange-200/80 px-2.5 py-1.5 rounded-xl transition cursor-pointer">
@@ -83,6 +83,12 @@
                     <span class="hidden sm:inline text-xs font-semibold text-amber-600">баллов</span>
                 </div>
                 
+                <!-- Theme Switcher Button -->
+                <button onclick="cycleTheme()" title="Сменить тему оформления" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition">
+                    <i data-lucide="palette" class="w-4 h-4"></i>
+                </button>
+
+                <!-- Reset Demo Data -->
                 <button onclick="resetDemoData()" title="Сбросить демо-данные" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition">
                     <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
                 </button>
@@ -122,8 +128,8 @@
         </section>
 
         <!-- Navigation Tabs -->
-        <div class="flex p-1 bg-slate-200/70 rounded-xl mb-6">
-            <button id="tab-tasks" onclick="switchTab('tasks')" class="flex-1 py-2.5 px-4 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition bg-white text-slate-900 shadow-sm">
+        <div class="flex p-1 bg-slate-200/70 rounded-xl mb-6 theme-nav-bg">
+            <button id="tab-tasks" onclick="switchTab('tasks')" class="flex-1 py-2.5 px-4 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition bg-white text-slate-900 shadow-sm theme-tab-active">
                 <i data-lucide="check-square" class="w-4 h-4 text-indigo-600"></i>
                 <span>Задания</span>
                 <span id="tasks-count-badge" class="ml-1 text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">0</span>
@@ -132,6 +138,11 @@
                 <i data-lucide="gift" class="w-4 h-4 text-amber-500"></i>
                 <span>Магазин наград</span>
             </button>
+            <button id="tab-achievements" onclick="switchTab('achievements')" class="flex-1 py-2.5 px-4 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition text-slate-600 hover:text-slate-900">
+                <i data-lucide="trophy" class="w-4 h-4 text-purple-500"></i>
+                <span>Достижения</span>
+                <span id="achievements-count-badge" class="ml-1 text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">0</span>
+            </button>
         </div>
 
         <!-- ==================== TASKS SECTION ==================== -->
@@ -139,7 +150,7 @@
             <!-- Action Header -->
             <div class="flex items-center justify-between mb-4">
                 <div>
-                    <h2 class="text-lg font-bold text-slate-800">Активные квесты</h2>
+                    <h2 class="text-lg font-bold text-slate-800 theme-text">Активные квесты</h2>
                     <p class="text-xs text-slate-500">Выполняй дела, чтобы заработать баллы</p>
                 </div>
                 <button onclick="openTaskModal()" class="bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-semibold text-sm px-4 py-2.5 rounded-xl shadow-md shadow-indigo-200 flex items-center gap-2 transition">
@@ -169,7 +180,7 @@
         <section id="section-rewards" class="hidden fade-in">
             <div class="flex items-center justify-between mb-4">
                 <div>
-                    <h2 class="text-lg font-bold text-slate-800">Твои награды</h2>
+                    <h2 class="text-lg font-bold text-slate-800 theme-text">Твои награды</h2>
                     <p class="text-xs text-slate-500">Обменивай баллы на приятный отдых без чувства вины</p>
                 </div>
                 <button onclick="openRewardModal()" class="bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-semibold text-sm px-4 py-2.5 rounded-xl shadow-md shadow-amber-200 flex items-center gap-2 transition">
@@ -189,6 +200,20 @@
                 <div id="purchase-history-list" class="space-y-2">
                     <!-- History rendered via JS -->
                 </div>
+            </div>
+        </section>
+
+        <!-- ==================== ACHIEVEMENTS SECTION ==================== -->
+        <section id="section-achievements" class="hidden fade-in">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-800 theme-text">Трофеи и ачивки</h2>
+                    <p class="text-xs text-slate-500">Выполняй достижения и получай бонусные баллы</p>
+                </div>
+            </div>
+            <!-- Achievements Grid -->
+            <div id="achievements-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <!-- Rendered via JS -->
             </div>
         </section>
 
@@ -224,12 +249,43 @@
                 </button>
             </div>
 
-            <form id="task-form" onsubmit="handleCreateTask(event)" class="mt-4 space-y-5">
+            <form id="task-form" onsubmit="handleCreateTask(event)" class="mt-4 space-y-4">
                 <!-- Task Title -->
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-1.5">Что нужно сделать?</label>
                     <input type="text" id="task-title-input" required placeholder="Например: Разобрать завалы на рабочем столе" 
                         class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition text-sm">
+                </div>
+
+                <!-- Category Selector -->
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Категория</label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="task-category" value="💼 Работа" class="peer sr-only" checked>
+                            <div class="p-2 text-center rounded-xl border border-slate-200 bg-white peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-checked:text-indigo-700 transition text-xs font-semibold">
+                                💼 Работа
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="task-category" value="📚 Учеба" class="peer sr-only">
+                            <div class="p-2 text-center rounded-xl border border-slate-200 bg-white peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-checked:text-indigo-700 transition text-xs font-semibold">
+                                📚 Учеба
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="task-category" value="💪 Спорт" class="peer sr-only">
+                            <div class="p-2 text-center rounded-xl border border-slate-200 bg-white peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-checked:text-indigo-700 transition text-xs font-semibold">
+                                💪 Спорт
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="task-category" value="🧹 Быт" class="peer sr-only">
+                            <div class="p-2 text-center rounded-xl border border-slate-200 bg-white peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-checked:text-indigo-700 transition text-xs font-semibold">
+                                🧹 Быт
+                            </div>
+                        </label>
+                    </div>
                 </div>
 
                 <!-- Survey Section -->
@@ -472,6 +528,7 @@
             return {
                 points: 45,
                 xp: 45,
+                theme: 'light', // light, dark, cyberpunk
                 streak: {
                     current: 1,
                     best: 1,
@@ -484,6 +541,7 @@
                         title: 'Выпить стакан воды и сделать зарядку 10 минут',
                         points: 20,
                         difficulty: 'Легко',
+                        category: '💪 Спорт',
                         color: 'emerald',
                         completed: false
                     },
@@ -492,6 +550,7 @@
                         title: 'Разобрать входящие письма и ответить на важные',
                         points: 60,
                         difficulty: 'Средне',
+                        category: '💼 Работа',
                         color: 'amber',
                         completed: false
                     },
@@ -500,6 +559,7 @@
                         title: 'Подготовить отчёт / презентацию по проекту',
                         points: 110,
                         difficulty: 'Эпик',
+                        category: '📚 Учеба',
                         color: 'purple',
                         completed: false
                     }
@@ -510,34 +570,41 @@
                     { id: 103, title: 'Заказать любимую пиццу / суши', cost: 150, icon: '🍕' },
                     { id: 104, title: 'Вечер без дел и соцсетей (полный чилл)', cost: 200, icon: '🛁' }
                 ],
+                achievements: [
+                    { id: 'first_task', title: 'Первая кровь', desc: 'Выполни свой первый квест', icon: '⚔️', reward: 25, unlocked: false },
+                    { id: 'task_master', title: 'Продуктивный день', desc: 'Выполни 3 квеста за день', icon: '⚡', reward: 50, unlocked: false },
+                    { id: 'rich_guy', title: 'Капиталист', desc: 'Накопи 150 баллов на балансе', icon: '💰', reward: 40, unlocked: false },
+                    { id: 'streak_week', title: 'Недельный воин', desc: 'Удерживай стрик 7 дней подряд', icon: '🔥', reward: 100, unlocked: false }
+                ],
                 history: []
             };
         }
 
         // Load state from localStorage or use default
-        let state = JSON.parse(localStorage.getItem('questlog_state_v2')) || createDefaultState();
+        let state = JSON.parse(localStorage.getItem('questlog_state_v3')) || createDefaultState();
 
+        // Migration safety checks
         if (!state.streak) {
             const today = getDateStr(0);
-            state.streak = {
-                current: 1,
-                best: 1,
-                lastActiveDate: today,
-                historyDates: [today]
-            };
+            state.streak = { current: 1, best: 1, lastActiveDate: today, historyDates: [today] };
+        }
+        if (!state.achievements) {
+            state.achievements = createDefaultState().achievements;
+        }
+        if (!state.theme) {
+            state.theme = 'light';
         }
 
         function saveState() {
-            localStorage.setItem('questlog_state_v2', JSON.stringify(state));
+            localStorage.setItem('questlog_state_v3', JSON.stringify(state));
         }
 
+        // Check daily login streak automatically on page load
         function checkDailyStreak(simulatedDateStr = null) {
             const todayStr = simulatedDateStr || getDateStr(0);
             const lastStr = state.streak.lastActiveDate;
 
-            if (lastStr === todayStr) {
-                return;
-            }
+            if (lastStr === todayStr) return;
 
             const lastDate = new Date(lastStr + 'T00:00:00');
             const todayDate = new Date(todayStr + 'T00:00:00');
@@ -566,29 +633,53 @@
 
         checkDailyStreak();
 
+        // Theme switching logic
+        function cycleTheme() {
+            if (state.theme === 'light') state.theme = 'dark';
+            else if (state.theme === 'dark') state.theme = 'cyberpunk';
+            else state.theme = 'light';
+
+            saveState();
+            applyTheme();
+            showToast(`Тема изменена: ${state.theme}`, '🎨');
+        }
+
+        function applyTheme() {
+            const body = document.getElementById('app-body');
+            const header = document.getElementById('app-header');
+            
+            if (state.theme === 'dark') {
+                body.className = "bg-slate-900 text-slate-100 antialiased pb-24 transition-colors duration-300";
+                header.className = "bg-slate-800 border-b border-slate-700 sticky top-0 z-30 shadow-sm transition-colors duration-300";
+            } else if (state.theme === 'cyberpunk') {
+                body.className = "bg-zinc-950 text-yellow-300 antialiased pb-24 transition-colors duration-300";
+                header.className = "bg-zinc-900 border-b border-yellow-500/30 sticky top-0 z-30 shadow-sm transition-colors duration-300";
+            } else {
+                body.className = "bg-slate-50 text-slate-800 antialiased pb-24 transition-colors duration-300";
+                header.className = "bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm transition-colors duration-300";
+            }
+        }
+
         // UI Tabs
         function switchTab(tabName) {
-            const tasksTab = document.getElementById('tab-tasks');
-            const rewardsTab = document.getElementById('tab-rewards');
-            const tasksSec = document.getElementById('section-tasks');
-            const rewardsSec = document.getElementById('section-rewards');
-
-            if (tabName === 'tasks') {
-                tasksTab.className = "flex-1 py-2.5 px-4 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition bg-white text-slate-900 shadow-sm";
-                rewardsTab.className = "flex-1 py-2.5 px-4 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition text-slate-600 hover:text-slate-900";
-                tasksSec.classList.remove('hidden');
-                rewardsSec.classList.add('hidden');
-            } else {
-                rewardsTab.className = "flex-1 py-2.5 px-4 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition bg-white text-slate-900 shadow-sm";
-                tasksTab.className = "flex-1 py-2.5 px-4 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition text-slate-600 hover:text-slate-900";
-                rewardsSec.classList.remove('hidden');
-                tasksSec.classList.add('hidden');
-            }
+            const tabs = ['tasks', 'rewards', 'achievements'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                const sec = document.getElementById(`section-${t}`);
+                if (t === tabName) {
+                    btn.className = "flex-1 py-2.5 px-4 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition bg-white text-slate-900 shadow-sm";
+                    sec.classList.remove('hidden');
+                } else {
+                    btn.className = "flex-1 py-2.5 px-4 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition text-slate-600 hover:text-slate-900";
+                    sec.classList.add('hidden');
+                }
+            });
         }
 
         // Render everything
         function render() {
-            // Points & XP
+            applyTheme();
+
             document.getElementById('points-balance').innerText = state.points;
             
             const level = Math.floor(state.xp / 100) + 1;
@@ -599,10 +690,8 @@
 
             // Streak
             document.getElementById('streak-count').innerText = state.streak.current;
-            document.getElementById('banner-streak-count') && (document.getElementById('banner-streak-count').innerText = state.streak.current);
-            document.getElementById('streak-banner-title').innerText = `Серия: ${state.streak.current} ${getDeclension(state.streak.current, ['день', дня, 'дней'])!=='дней'?'день':'дней'} подряд!`;
+            document.getElementById('streak-banner-title').innerText = `Серия: ${state.streak.current} день подряд!`;
             
-            // Next milestone info
             const nextM = STREAK_MILESTONES.find(m => m.days > state.streak.current) || STREAK_MILESTONES[STREAK_MILESTONES.length - 1];
             const daysLeft = Math.max(0, nextM.days - state.streak.current);
             document.getElementById('streak-next-milestone').innerText = daysLeft > 0 ? `До бонуса (${nextM.days} дн.): ${daysLeft} дн.` : `Цель достигнута! 🎉`;
@@ -610,13 +699,9 @@
             renderStreakDots();
             renderTasks();
             renderRewards();
+            renderAchievements();
             
             lucide.createIcons();
-        }
-
-        function getDeclension(number, titles) {
-            const cases = [2, 0, 1, 1, 1, 2];
-            return titles[ (number%100>4 && number%100<20) ? 2 : cases[(number%10<5)?number%10:5] ];
         }
 
         function renderStreakDots() {
@@ -625,10 +710,8 @@
             container.innerHTML = '';
 
             const current = state.streak.current;
-            const displayCount = Math.max(7, Math.ceil(current / 7) * 7);
-            
-            for (let i = 1; i <= Math.min(7, displayCount); i++) {
-                const isChecked = i <= (current % 7 === 0 ? 7 : current % 7);
+            for (let i = 1; i <= Math.min(7, Math.max(7, current)); i++) {
+                const isChecked = i <= (current % 7 === 0 && current > 0 ? 7 : current % 7);
                 const dot = document.createElement('div');
                 dot.className = `w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold transition ${isChecked ? 'bg-white text-orange-600 shadow-sm' : 'bg-white/20 text-white/70'}`;
                 dot.innerText = i;
@@ -652,11 +735,11 @@
 
             if (activeTasks.length === 0) {
                 activeList.innerHTML = `
-                    <div class="text-center py-10 bg-white rounded-2xl border border-slate-200/60 p-6">
+                    <div class="text-center py-10 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/60 p-6">
                         <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
                             <i data-lucide="check-circle-2" class="w-6 h-6"></i>
                         </div>
-                        <h3 class="font-bold text-slate-800 text-sm">Все квесты выполнены!</h3>
+                        <h3 class="font-bold text-slate-800 dark:text-white text-sm">Все квесты выполнены!</h3>
                         <p class="text-xs text-slate-400 mt-1">Добавь новое задание или отдохни в магазине наград.</p>
                     </div>
                 `;
@@ -669,21 +752,24 @@
                     };
                     const badgeClass = diffColors[task.color] || diffColors.emerald;
 
+                    const cardBg = state.theme === 'dark' ? 'bg-slate-800 border-slate-700 text-slate-100' : (state.theme === 'cyberpunk' ? 'bg-zinc-900 border-yellow-500/40 text-yellow-200' : 'bg-white border-slate-200/80');
+
                     const item = document.createElement('div');
-                    item.className = "bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between gap-3 hover:border-indigo-200 transition";
+                    item.className = `${cardBg} p-4 rounded-2xl border shadow-sm flex items-center justify-between gap-3 transition`;
                     item.innerHTML = `
                         <div class="flex items-start gap-3.5 flex-1 min-w-0">
                             <button onclick="completeTask(${task.id})" class="w-6 h-6 rounded-lg border-2 border-slate-300 hover:border-indigo-600 hover:bg-indigo-50 flex items-center justify-center shrink-0 transition mt-0.5 cursor-pointer">
                             </button>
                             <div class="min-w-0">
-                                <h4 class="font-semibold text-slate-800 text-sm leading-snug break-words">${escapeHtml(task.title)}</h4>
-                                <div class="flex items-center gap-2 mt-1.5">
+                                <h4 class="font-semibold text-sm leading-snug break-words">${escapeHtml(task.title)}</h4>
+                                <div class="flex items-center gap-2 mt-1.5 flex-wrap">
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">${task.category || '💼 Работа'}</span>
                                     <span class="text-[10px] font-bold px-2 py-0.5 rounded-md border ${badgeClass}">${task.difficulty}</span>
                                 </div>
                             </div>
                         </div>
                         <div class="flex items-center gap-3 shrink-0">
-                            <div class="flex items-center gap-1 text-amber-600 font-extrabold text-sm bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200/60">
+                            <div class="flex items-center gap-1 text-amber-600 font-extrabold text-sm bg-amber-50 dark:bg-amber-950 px-2.5 py-1 rounded-xl border border-amber-200/60">
                                 <i data-lucide="coins" class="w-3.5 h-3.5 fill-amber-400"></i>
                                 <span>+${task.points}</span>
                             </div>
@@ -700,7 +786,7 @@
                 completedSec.classList.remove('hidden');
                 completedTasks.forEach(task => {
                     const item = document.createElement('div');
-                    item.className = "bg-white/60 p-3 rounded-xl border border-slate-200/60 flex items-center justify-between gap-3";
+                    item.className = "bg-white/60 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-200/60 flex items-center justify-between gap-3";
                     item.innerHTML = `
                         <div class="flex items-center gap-3 min-w-0">
                             <div class="w-5 h-5 rounded-md bg-emerald-500 text-white flex items-center justify-center shrink-0">
@@ -727,8 +813,10 @@
 
             state.rewards.forEach(rew => {
                 const canAfford = state.points >= rew.cost;
+                const cardBg = state.theme === 'dark' ? 'bg-slate-800 border-slate-700 text-slate-100' : (state.theme === 'cyberpunk' ? 'bg-zinc-900 border-yellow-500/40 text-yellow-200' : 'bg-white border-slate-200/80');
+
                 const card = document.createElement('div');
-                card.className = "bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between gap-4";
+                card.className = `${cardBg} p-4 rounded-2xl border shadow-sm flex flex-col justify-between gap-4`;
                 card.innerHTML = `
                     <div class="flex items-start justify-between gap-3">
                         <div class="flex items-center gap-3">
@@ -736,7 +824,7 @@
                                 ${rew.icon}
                             </div>
                             <div>
-                                <h4 class="font-bold text-slate-800 text-sm leading-snug">${escapeHtml(rew.title)}</h4>
+                                <h4 class="font-bold text-sm leading-snug">${escapeHtml(rew.title)}</h4>
                                 <div class="flex items-center gap-1 text-amber-600 font-extrabold text-xs mt-1">
                                     <i data-lucide="coins" class="w-3.5 h-3.5 fill-amber-400"></i>
                                     <span>${rew.cost} баллов</span>
@@ -748,7 +836,7 @@
                         </button>
                     </div>
                     <button onclick="buyReward(${rew.id})" ${!canAfford ? 'disabled' : ''} 
-                        class="w-full py-2.5 rounded-xl font-semibold text-xs transition flex items-center justify-center gap-1.5 ${canAfford ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-md shadow-amber-200 active:scale-98 cursor-pointer' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}">
+                        class="w-full py-2.5 rounded-xl font-semibold text-xs transition flex items-center justify-center gap-1.5 ${canAfford ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-md shadow-amber-200 active:scale-98 cursor-pointer' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 cursor-not-allowed'}">
                         <i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i>
                         <span>${canAfford ? 'Получить награду' : 'Не хватает баллов'}</span>
                     </button>
@@ -760,11 +848,11 @@
                 historySec.classList.remove('hidden');
                 state.history.slice(-5).reverse().forEach(hist => {
                     const item = document.createElement('div');
-                    item.className = "bg-white p-3 rounded-xl border border-slate-200/60 flex items-center justify-between text-xs";
+                    item.className = "bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200/60 flex items-center justify-between text-xs";
                     item.innerHTML = `
                         <div class="flex items-center gap-2">
                             <span>🎁</span>
-                            <span class="font-semibold text-slate-700">${escapeHtml(hist.title)}</span>
+                            <span class="font-semibold">${escapeHtml(hist.title)}</span>
                         </div>
                         <span class="text-slate-400">-${hist.cost} баллов</span>
                     `;
@@ -773,6 +861,61 @@
             } else {
                 historySec.classList.add('hidden');
             }
+        }
+
+        function renderAchievements() {
+            const grid = document.getElementById('achievements-grid');
+            const badge = document.getElementById('achievements-count-badge');
+            grid.innerHTML = '';
+
+            let unlockedCount = 0;
+            state.achievements.forEach(ach => {
+                if (ach.unlocked) unlockedCount++;
+
+                const cardBg = state.theme === 'dark' ? 'bg-slate-800 border-slate-700 text-slate-100' : (state.theme === 'cyberpunk' ? 'bg-zinc-900 border-yellow-500/40 text-yellow-200' : 'bg-white border-slate-200/80');
+                
+                const card = document.createElement('div');
+                card.className = `${cardBg} p-4 rounded-2xl border shadow-sm flex items-center gap-3.5 transition ${ach.unlocked ? 'border-purple-300 bg-purple-50/20' : 'opacity-70'}`;
+                card.innerHTML = `
+                    <div class="w-12 h-12 rounded-xl bg-purple-100 dark:bg-purple-950 flex items-center justify-center text-2xl shrink-0">
+                        ${ach.icon}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2">
+                            <h4 class="font-bold text-sm truncate">${ach.title}</h4>
+                            ${ach.unlocked ? '<span class="text-[10px] bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded-full">Получено</span>' : ''}
+                        </div>
+                        <p class="text-xs text-slate-400 mt-0.5">${ach.desc}</p>
+                        <div class="text-[10px] text-purple-600 font-semibold mt-1">Награда: +${ach.reward} баллов</div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+            badge.innerText = `${unlockedCount}/${state.achievements.length}`;
+        }
+
+        // Check Achievements Progress
+        function checkAchievements() {
+            let updated = false;
+            state.achievements.forEach(ach => {
+                if (ach.unlocked) return;
+
+                let unlock = false;
+                if (ach.id === 'first_task' && state.tasks.some(t => t.completed)) unlock = true;
+                if (ach.id === 'task_master' && state.tasks.filter(t => t.completed).length >= 3) unlock = true;
+                if (ach.id === 'rich_guy' && state.points >= 150) unlock = true;
+                if (ach.id === 'streak_week' && state.streak.current >= 7) unlock = true;
+
+                if (unlock) {
+                    ach.unlocked = true;
+                    state.points += ach.reward;
+                    state.xp += ach.reward;
+                    updated = true;
+                    showToast(`🏆 Достижение разблокировано: ${ach.title}! +${ach.reward} баллов`, '🎉');
+                    triggerConfetti();
+                }
+            });
+            if (updated) saveState();
         }
 
         // Complete Task Action
@@ -784,6 +927,7 @@
             state.points += task.points;
             state.xp += task.points;
 
+            checkAchievements();
             saveState();
             render();
             triggerConfetti();
@@ -874,6 +1018,7 @@
         function handleCreateTask(e) {
             e.preventDefault();
             const title = document.getElementById('task-title-input').value.trim();
+            const category = document.querySelector('input[name="task-category"]:checked').value;
             const points = parseInt(document.getElementById('calc-points-value').innerText);
             const difficulty = document.getElementById('calc-difficulty-badge').innerText;
 
@@ -884,6 +1029,7 @@
             const newTask = {
                 id: Date.now(),
                 title,
+                category,
                 points,
                 difficulty,
                 color,
@@ -967,6 +1113,7 @@
             simDaysOffset += 1;
             const testDate = getDateStr(simDaysOffset);
             checkDailyStreak(testDate);
+            checkAchievements();
             render();
             showToast(`Симуляция: сегодня ${testDate}`, '⏱️');
         }
