@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>QuestLog — Трекер дел с наградами</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .fade-in {
+            animation: fadeIn 0.25s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .pop-in {
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.92); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes flamePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+        .flame-active {
+            animation: flamePulse 2s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased pb-24">
+
+    <!-- Top Header / Stats Bar -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+            <!-- Brand & Level -->
+            <div class="flex items-center gap-2.5">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-md shadow-indigo-200 shrink-0">
+                    <i data-lucide="swords" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-1.5">
+                        <h1 class="font-bold text-base sm:text-lg tracking-tight text-slate-900">QuestLog</h1>
+                        <span id="user-level-badge" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 whitespace-nowrap">Ур. 1</span>
+                    </div>
+                    <!-- XP Progress bar -->
+                    <div class="flex items-center gap-1.5 mt-1">
+                        <div class="w-20 sm:w-28 h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div id="xp-bar" class="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500" style="width: 30%"></div>
+                        </div>
+                        <span id="xp-text" class="text-[10px] font-medium text-slate-400">30/100 XP</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Streak, Points & Reset -->
+            <div class="flex items-center gap-1.5 sm:gap-2">
+                <!-- Streak Badge -->
+                <button onclick="openStreakModal()" title="Ежедневный стрик" class="flex items-center gap-1 bg-orange-50 hover:bg-orange-100 border border-orange-200/80 px-2.5 py-1.5 rounded-xl transition cursor-pointer">
+                    <i data-lucide="flame" id="header-flame-icon" class="w-4 h-4 text-orange-500 fill-orange-500 flame-active"></i>
+                    <span id="streak-count" class="font-extrabold text-orange-700 text-xs sm:text-sm">1</span>
+                    <span id="streak-label" class="hidden sm:inline text-xs font-semibold text-orange-600">день</span>
+                </button>
+
+                <!-- Points Balance -->
+                <div class="flex items-center gap-1.5 bg-amber-50 border border-amber-200/80 px-2.5 sm:px-3.5 py-1.5 rounded-xl">
+                    <i data-lucide="coins" class="w-4 h-4 text-amber-500 fill-amber-400"></i>
+                    <span id="points-balance" class="font-extrabold text-amber-700 text-sm sm:text-base">0</span>
+                    <span class="hidden sm:inline text-xs font-semibold text-amber-600">баллов</span>
+                </div>
+                
+                <button onclick="resetDemoData()" title="Сбросить демо-данные" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition">
+                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-3xl mx-auto px-4 pt-5">
+
+        <!-- Daily Streak Banner Card -->
+        <section class="bg-gradient-to-r from-orange-500 to-amber-500 rounded-2xl p-4 sm:p-5 text-white shadow-md shadow-orange-200/60 mb-5 relative overflow-hidden">
+            <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="bg-white/20 backdrop-blur-sm text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
+                            <i data-lucide="flame" class="w-3.5 h-3.5 fill-white"></i> Ударный режим
+                        </span>
+                        <span id="streak-next-milestone" class="text-xs font-medium text-orange-100">До бонуса: 2 дн.</span>
+                    </div>
+                    <h2 id="streak-banner-title" class="text-lg sm:text-xl font-extrabold mt-1.5">Серия: 1 день подряд!</h2>
+                    <p class="text-xs sm:text-sm text-orange-50 mt-0.5">Заходи каждый день и получай <strong>+10 баллов</strong> и бонусы за серии.</p>
+                </div>
+
+                <!-- 7-day visual tracker & Simulate Next Day button -->
+                <div class="flex flex-col sm:items-end gap-2.5">
+                    <div id="streak-days-dots" class="flex items-center gap-1.5">
+                        <!-- Rendered via JS -->
+                    </div>
+                    <button onclick="simulateNextDay()" class="self-start sm:self-end text-xs font-semibold bg-white/20 hover:bg-white/30 active:scale-95 text-white px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 backdrop-blur-sm border border-white/20">
+                        <i data-lucide="fast-forward" class="w-3.5 h-3.5"></i> +1 день (тест стрика)
+                    </button>
+                </div>
+            </div>
+            <!-- Decorative background circle -->
+            <div class="absolute -right-8 -bottom-10 w-36 h-36 bg-white/10 rounded-full pointer-events-none"></div>
+        </section>
+
+        <!-- Navigation Tabs -->
+        <div class="flex p-1 bg-slate-200/70 rounded-xl mb-6">
+            <button id="tab-tasks" onclick="switchTab('tasks')" class="flex-1 py-2.5 px-4 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition bg-white text-slate-900 shadow-sm">
+                <i data-lucide="check-square" class="w-4 h-4 text-indigo-600"></i>
+                <span>Задания</span>
+                <span id="tasks-count-badge" class="ml-1 text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">0</span>
+            </button>
+            <button id="tab-rewards" onclick="switchTab('rewards')" class="flex-1 py-2.5 px-4 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition text-slate-600 hover:text-slate-900">
+                <i data-lucide="gift" class="w-4 h-4 text-amber-500"></i>
+                <span>Магазин наград</span>
+            </button>
+        </div>
+
+        <!-- ==================== TASKS SECTION ==================== -->
+        <section id="section-tasks" class="fade-in">
+            <!-- Action Header -->
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-800">Активные квесты</h2>
+                    <p class="text-xs text-slate-500">Выполняй дела, чтобы заработать баллы</p>
+                </div>
+                <button onclick="openTaskModal()" class="bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-semibold text-sm px-4 py-2.5 rounded-xl shadow-md shadow-indigo-200 flex items-center gap-2 transition">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                    <span>Новое задание</span>
+                </button>
+            </div>
+
+            <!-- Active Tasks List -->
+            <div id="active-tasks-list" class="space-y-3">
+                <!-- Tasks rendered via JS -->
+            </div>
+
+            <!-- Completed Tasks Collapsible / Section -->
+            <div id="completed-section" class="mt-8 hidden">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Выполненные сегодня</h3>
+                    <button onclick="clearCompleted()" class="text-xs text-slate-400 hover:text-rose-500 transition">Очистить</button>
+                </div>
+                <div id="completed-tasks-list" class="space-y-2 opacity-75">
+                    <!-- Completed tasks rendered via JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== REWARDS SHOP SECTION ==================== -->
+        <section id="section-rewards" class="hidden fade-in">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-800">Твои награды</h2>
+                    <p class="text-xs text-slate-500">Обменивай баллы на приятный отдых без чувства вины</p>
+                </div>
+                <button onclick="openRewardModal()" class="bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-semibold text-sm px-4 py-2.5 rounded-xl shadow-md shadow-amber-200 flex items-center gap-2 transition">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                    <span>Добавить награду</span>
+                </button>
+            </div>
+
+            <!-- Rewards Grid -->
+            <div id="rewards-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <!-- Rewards rendered via JS -->
+            </div>
+
+            <!-- Purchase History -->
+            <div id="history-section" class="mt-8 hidden">
+                <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Недавно получено</h3>
+                <div id="purchase-history-list" class="space-y-2">
+                    <!-- History rendered via JS -->
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ==================== MODAL: CREATE TASK WITH SURVEY ==================== -->
+    <div id="task-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl pop-in max-h-[92vh] overflow-y-auto">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div class="flex items-center gap-2">
+                    <span class="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+                        <i data-lucide="sparkles" class="w-5 h-5"></i>
+                    </span>
+                    <h3 class="font-bold text-lg text-slate-900">Создать задание</h3>
+                </div>
+                <button onclick="closeTaskModal()" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form id="task-form" onsubmit="handleCreateTask(event)" class="mt-4 space-y-5">
+                <!-- Task Title -->
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Что нужно сделать?</label>
+                    <input type="text" id="task-title-input" required placeholder="Например: Разобрать завалы на рабочем столе" 
+                        class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition text-sm">
+                </div>
+
+                <!-- Survey Section -->
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/80 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold uppercase tracking-wider text-indigo-600 flex items-center gap-1.5">
+                            <i data-lucide="clipboard-list" class="w-4 h-4"></i>
+                            Опросник сложности
+                        </span>
+                        <span class="text-xs text-slate-400">Ответь честно</span>
+                    </div>
+
+                    <!-- Question 1: Time -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-2">1. Сколько времени займёт задача?</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="q_time" value="10" class="peer sr-only" checked onchange="recalculateSurvey()">
+                                <div class="p-2.5 text-center rounded-lg border border-slate-200 bg-white peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-checked:text-indigo-700 transition">
+                                    <div class="text-xs font-bold">До 15 мин</div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">Быстро</div>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="q_time" value="25" class="peer sr-only" onchange="recalculateSurvey()">
+                                <div class="p-2.5 text-center rounded-lg border border-slate-200 bg-white peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-checked:text-indigo-700 transition">
+                                    <div class="text-xs font-bold">30–60 мин</div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">Средне</div>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="q_time" value="50" class="peer sr-only" onchange="recalculateSurvey()">
+                                <div class="p-2.5 text-center rounded-lg border border-slate-200 bg-white peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-checked:text-indigo-700 transition">
+                                    <div class="text-xs font-bold">2+ часа</div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">Марафон</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Question 2: Procrastination / Resistance -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-2">2. Насколько сильно не хочется это делать?</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="q_resistance" value="5" class="peer sr-only" checked onchange="recalculateSurvey()">
+                                <div class="p-2.5 text-center rounded-lg border border-slate-200 bg-white peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-checked:text-indigo-700 transition">
+                                    <div class="text-xs font-bold">Легко</div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">Без напряга</div>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="q_resistance" value="20" class="peer sr-only" onchange="recalculateSurvey()">
+                                <div class="p-2.5 text-center rounded-lg border border-slate-200 bg-white peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-checked:text-indigo-700 transition">
+                                    <div class="text-xs font-bold">Терпимо</div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">Немного лень</div>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="q_resistance" value="45" class="peer sr-only" onchange="recalculateSurvey()">
+                                <div class="p-2.5 text-center rounded-lg border border-slate-200 bg-white peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-checked:text-indigo-700 transition">
+                                    <div class="text-xs font-bold">Пытка</div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">Тяну неделю</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Question 3: Mental / Physical Effort -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-2">3. Насколько сложная концентрация нужна?</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="q_effort" value="5" class="peer sr-only" checked onchange="recalculateSurvey()">
+                                <div class="p-2.5 text-center rounded-lg border border-slate-200 bg-white peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-checked:text-indigo-700 transition">
+                                    <div class="text-xs font-bold">На автомате</div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">Рутина</div>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="q_effort" value="15" class="peer sr-only" onchange="recalculateSurvey()">
+                                <div class="p-2.5 text-center rounded-lg border border-slate-200 bg-white peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-checked:text-indigo-700 transition">
+                                    <div class="text-xs font-bold">Подумать</div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">Нужен фокус</div>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="q_effort" value="35" class="peer sr-only" onchange="recalculateSurvey()">
+                                <div class="p-2.5 text-center rounded-lg border border-slate-200 bg-white peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-checked:text-indigo-700 transition">
+                                    <div class="text-xs font-bold">Взрыв мозга</div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">Макс. усилия</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Calculated Result Card -->
+                <div class="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100">
+                    <div>
+                        <span class="text-xs text-slate-500 block">Оценка сложности:</span>
+                        <span id="calc-difficulty-badge" class="inline-block mt-1 text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                            Легко
+                        </span>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xs text-slate-500 block">Награда за выполнение:</span>
+                        <div class="flex items-center justify-end gap-1 mt-0.5">
+                            <i data-lucide="coins" class="w-5 h-5 text-amber-500 fill-amber-400"></i>
+                            <span id="calc-points-value" class="text-2xl font-extrabold text-indigo-700">20</span>
+                            <span class="text-xs font-semibold text-indigo-500">баллов</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <div class="flex gap-3 pt-1">
+                    <button type="button" onclick="closeTaskModal()" class="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 font-semibold text-sm text-slate-600 hover:bg-slate-50 transition">
+                        Отмена
+                    </button>
+                    <button type="submit" class="flex-1 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 font-semibold text-sm text-white shadow-md shadow-indigo-200 transition">
+                        Добавить квест
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: ADD CUSTOM REWARD ==================== -->
+    <div id="reward-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl pop-in">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h3 class="font-bold text-lg text-slate-900">Новая награда в магазин</h3>
+                <button onclick="closeRewardModal()" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form onsubmit="handleCreateReward(event)" class="mt-4 space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Название награды</label>
+                    <input type="text" id="reward-title-input" required placeholder="Например: Посмотреть серию сериала" 
+                        class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Цена (баллов)</label>
+                        <input type="number" id="reward-cost-input" required min="5" max="5000" value="50" 
+                            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Иконка (эмодзи)</label>
+                        <input type="text" id="reward-icon-input" value="🎁" maxlength="2"
+                            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none text-sm text-center text-lg">
+                    </div>
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button type="button" onclick="closeRewardModal()" class="flex-1 py-2.5 rounded-xl border border-slate-200 font-semibold text-sm text-slate-600 hover:bg-slate-50">
+                        Отмена
+                    </button>
+                    <button type="submit" class="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 font-semibold text-sm text-white shadow-md shadow-amber-200">
+                        Сохранить
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: STREAK DETAILS ==================== -->
+    <div id="streak-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl pop-in">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div class="flex items-center gap-2">
+                    <span class="p-2 bg-orange-100 text-orange-600 rounded-lg">
+                        <i data-lucide="flame" class="w-5 h-5 fill-orange-500"></i>
+                    </span>
+                    <h3 class="font-bold text-lg text-slate-900">Ежедневные стрики</h3>
+                </div>
+                <button onclick="closeStreakModal()" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="mt-4">
+                <!-- Stats summary -->
+                <div class="grid grid-cols-2 gap-3 mb-5">
+                    <div class="bg-orange-50 border border-orange-100 p-3.5 rounded-xl text-center">
+                        <div class="text-xs font-semibold text-orange-600">Текущая серия</div>
+                        <div id="modal-current-streak" class="text-2xl font-extrabold text-orange-700 mt-0.5">1 дн.</div>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-200/70 p-3.5 rounded-xl text-center">
+                        <div class="text-xs font-semibold text-slate-500">Лучший рекорд</div>
+                        <div id="modal-best-streak" class="text-2xl font-extrabold text-slate-800 mt-0.5">1 дн.</div>
+                    </div>
+                </div>
+
+                <!-- Milestones List -->
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2.5">Бонусы за регулярность</h4>
+                <div id="streak-milestones-list" class="space-y-2.5">
+                    <!-- Rendered via JS -->
+                </div>
+
+                <div class="mt-5 pt-3 border-t border-slate-100 flex justify-between items-center">
+                    <span class="text-xs text-slate-400">Каждый вход даёт +10 баллов</span>
+                    <button onclick="closeStreakModal()" class="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition">
+                        Понятно
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 text-sm font-medium opacity-0 pointer-events-none transition-all duration-300 z-50 w-max max-w-[90vw]">
+        <span id="toast-icon" class="text-amber-400 shrink-0">✨</span>
+        <span id="toast-message">Задание выполнено!</span>
+    </div>
+
+    <!-- Application Logic -->
+    <script>
+        // Helper for local YYYY-MM-DD date string
+        function getDateStr(offsetDays = 0) {
+            const d = new Date();
+            d.setDate(d.getDate() + offsetDays);
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        const STREAK_MILESTONES = [
+            { days: 3, bonus: 30, title: 'Разгон (3 дня подряд)' },
+            { days: 7, bonus: 100, title: 'Неделя дисциплины (7 дней)' },
+            { days: 14, bonus: 250, title: 'Железная привычка (14 дней)' },
+            { days: 30, bonus: 600, title: 'Легенда постоянства (30 дней)' }
+        ];
+
+        // Default initial demo state
+        function createDefaultState() {
+            const today = getDateStr(0);
+            return {
+                points: 45,
+                xp: 45,
+                streak: {
+                    current: 1,
+                    best: 1,
+                    lastActiveDate: today,
+                    historyDates: [today]
+                },
+                tasks: [
+                    {
+                        id: 1,
+                        title: 'Выпить стакан воды и сделать зарядку 10 минут',
+                        points: 20,
+                        difficulty: 'Легко',
+                        color: 'emerald',
+                        completed: false
+                    },
+                    {
+                        id: 2,
+                        title: 'Разобрать входящие письма и ответить на важные',
+                        points: 60,
+                        difficulty: 'Средне',
+                        color: 'amber',
+                        completed: false
+                    },
+                    {
+                        id: 3,
+                        title: 'Подготовить отчёт / презентацию по проекту',
+                        points: 110,
+                        difficulty: 'Эпик',
+                        color: 'purple',
+                        completed: false
+                    }
+                ],
+                rewards: [
+                    { id: 101, title: 'Кофе с круассаном в кофейне', cost: 40, icon: '☕' },
+                    { id: 102, title: '1 час игры в приставку / ПК', cost: 60, icon: '🎮' },
+                    { id: 103, title: 'Заказать любимую пиццу / суши', cost: 150, icon: '🍕' },
+                    { id: 104, title: 'Вечер без дел и соцсетей (полный чилл)', cost: 200, icon: '🛁' }
+                ],
+                history: []
+            };
+        }
+
+        // Load state from localStorage or use default
+        let state = JSON.parse(localStorage.getItem('questlog_state_v2')) || createDefaultState();
